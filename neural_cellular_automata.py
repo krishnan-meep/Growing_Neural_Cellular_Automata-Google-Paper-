@@ -65,7 +65,7 @@ img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)/255
 
 alpha = np.zeros((32, 32))
 
-for i in range(img.shape[0]):
+for i in range(img.shape[0]):									#Finding foreground pixels for alpha
 	for j in range(img.shape[1]):
 		s = img[i,j].mean()
 		if s < 1.0:
@@ -102,10 +102,11 @@ net = net.to(device)
 optimizer = optim.Adam(net.parameters(), lr = 0.001)
 
 iterations = 40
+target_img = target_img.to(device)
 
 for i in range(iterations):
 	net.zero_grad()
-	out = initial_seed
+	out = initial_seed.clone().to(device)
 
 	ca_steps = np.random.randint(64, 96)
 
@@ -116,7 +117,7 @@ for i in range(iterations):
 	L = torch.mean((out[:, :4] - target_img[:, :4])**2)
 	L.backward()
 
-	net.norm_gradients()
+	net.norm_gradients()								#Gradients explode
 
 	optimizer.step()
 
