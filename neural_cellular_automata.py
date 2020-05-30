@@ -5,6 +5,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
+import torchvision
 
 class NeurAutoNet(nn.Module):
 	def __init__(self):
@@ -94,15 +95,21 @@ initial_seed = initial_seed.repeat(4, 1, 1, 1)
 
 #Setup that network#################################################
 net = NeurAutoNet()
-optimizer = optim.Adam(net.parameters(), lr = 0.0001)
 
-iterations = 10
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+net = net.to(device)
+
+optimizer = optim.Adam(net.parameters(), lr = 0.001)
+
+iterations = 40
 
 for i in range(iterations):
 	net.zero_grad()
 	out = initial_seed
 
-	for k in range(64):
+	ca_steps = np.random.randint(64, 96)
+
+	for k in range(ca_steps):
 		out = net(out)
 		#print(out[:, :3].max(), out[:, :3].min())
 
@@ -113,8 +120,20 @@ for i in range(iterations):
 
 	optimizer.step()
 
-	#if i%10 == 0:
-	print("Loss: ", L.item())
+	if i%10 == 0:
+		print("Loss: ", L.item())
 
-plt.imshow(out[:, 3].detach().permute(1, 2, 0))
+#Display last result ######################################################################
+out = out[:, :4].detach().cpu()
+print(out.shape)
+
+grid = torchvision.utils.make_grid(out, nrow = 4, padding = 0, pad_value = 0.15)
+grid = np.transpose(grid, (1, 2, 0))
+print(grid.shape)
+plt.imshow(grid)
+plt.show()
+
+grid = torchvision.utils.make_grid(out[:, 3].unsqueeze(1), nrow = 4, padding = 0, pad_value = 0.15)
+grid = np.transpose(grid, (1, 2, 0))
+plt.imshow(grid)
 plt.show()
